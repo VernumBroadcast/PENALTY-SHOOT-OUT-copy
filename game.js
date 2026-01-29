@@ -25,7 +25,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const keeperImages = [
         'KEEPER NORMAL.png',
         'KEEPER save high.png',
-        'KEEPER Save Low.png'
+        'KEEPER save high right.png',
+        'KEEPER Save Low.png',
+        'KEEPER low right.png'
     ];
     keeperImages.forEach(src => {
         const img = new Image();
@@ -74,12 +76,28 @@ document.addEventListener('DOMContentLoaded', function() {
         // Calculate if keeper saves (60% chance of saving based on zone)
         const isSave = checkIfSave(zoneType);
         
+        // Determine which corner keeper dives to
+        let diveToZone = zoneType;
+        if (!isSave) {
+            // Dive to wrong corner for goals - opposite side
+            if (zoneType === 'top-left') {
+                diveToZone = 'top-right';
+            } else if (zoneType === 'top-right') {
+                diveToZone = 'top-left';
+            } else if (zoneType === 'bottom-left') {
+                diveToZone = 'bottom-right';
+            } else if (zoneType === 'bottom-right') {
+                diveToZone = 'bottom-left';
+            }
+        }
+        
         // Get position for ball animation
         const zonePos = zonePositions[zoneType];
+        const divePos = zonePositions[diveToZone];
         
         // Animate keeper and ball at the same time
         animateKeeper(zoneType, isSave);
-        animateBall(zonePos, isSave);
+        animateBall(zonePos, isSave, diveToZone);
         
         // Show result after animation (longer for saves due to bounce)
         const animationDelay = isSave ? 1400 : 1200;
@@ -137,29 +155,64 @@ document.addEventListener('DOMContentLoaded', function() {
             keeperImage = 'KEEPER save high.png';
         } else if (diveToZone === 'top-right') {
             diveClass = 'diving-top-right';
-            keeperImage = 'KEEPER save high.png';
+            keeperImage = 'KEEPER save high right.png';
         } else if (diveToZone === 'bottom-left') {
             diveClass = 'diving-bottom-left';
             keeperImage = 'KEEPER Save Low.png';
         } else if (diveToZone === 'bottom-right') {
             diveClass = 'diving-bottom-right';
-            keeperImage = 'KEEPER Save Low.png';
+            keeperImage = 'KEEPER low right.png';
         }
         
         // Apply the dive animation and image
         keeper.src = keeperImage;
         keeper.className = 'keeper ' + diveClass;
+        
+        // If it's a goal and keeper dived to top-left or top-right, make them fall after the dive
+        if (!isSave && (diveToZone === 'top-left' || diveToZone === 'top-right')) {
+            setTimeout(() => {
+                // Add fall animation after dive completes (0.5s)
+                const fallClass = diveToZone === 'top-left' ? 'falling-top-left' : 'falling-top-right';
+                keeper.className = 'keeper ' + fallClass;
+            }, 500); // After dive animation completes
+        }
     }
 
-    function animateBall(zonePos, isSave) {
+    function animateBall(zonePos, isSave, diveToZone) {
         const ball = document.getElementById('ball');
         const goalArea = document.querySelector('.goal-area');
         const goalRect = goalArea.getBoundingClientRect();
         const ballContainer = ball.parentElement;
         
         // Calculate final position relative to viewport
-        const finalLeft = goalRect.left + (goalRect.width * parseFloat(zonePos.left) / 100);
-        const finalTop = goalRect.top + (goalRect.height * parseFloat(zonePos.top) / 100);
+        let finalLeft = goalRect.left + (goalRect.width * parseFloat(zonePos.left) / 100);
+        let finalTop = goalRect.top + (goalRect.height * parseFloat(zonePos.top) / 100);
+        
+        // If it's a save, adjust ball position to align with keeper's hands
+        if (isSave) {
+            const keeperContainer = document.querySelector('.keeper-container');
+            const keeperRect = keeperContainer.getBoundingClientRect();
+            const keeperCenterX = keeperRect.left + keeperRect.width / 2;
+            
+            // Adjust based on dive direction to match keeper's hand position
+            if (diveToZone === 'bottom-left') {
+                // Keeper dives -70px left, 20px down - adjust ball to hit hands, more to side and higher
+                finalLeft = keeperCenterX - 70 - 75; // More to the side
+                finalTop = keeperRect.bottom - keeperRect.height * 0.35 - 5; // 20px higher
+            } else if (diveToZone === 'bottom-right') {
+                // Keeper dives 70px right, 20px down
+                finalLeft = keeperCenterX + 70 + 75; // More to the side
+                finalTop = keeperRect.bottom - keeperRect.height * 0.35 - 5; // 20px higher
+            } else if (diveToZone === 'top-left') {
+                // Keeper dives -40px left, -30px up
+                finalLeft = keeperCenterX - 40 - 90; // Even further left to match hands
+                finalTop = keeperRect.bottom - keeperRect.height * 0.65 - 25; // Higher to match hands
+            } else if (diveToZone === 'top-right') {
+                // Keeper dives 40px right, -30px up
+                finalLeft = keeperCenterX + 40 + 90; // Even further right to match hands
+                finalTop = keeperRect.bottom - keeperRect.height * 0.65 - 25; // Higher to match hands
+            }
+        }
         
         // Get ball's current position (center bottom)
         const ballRect = ballContainer.getBoundingClientRect();
@@ -185,11 +238,35 @@ document.addEventListener('DOMContentLoaded', function() {
         // If it's a save, bounce the ball away after it reaches the keeper
         if (isSave) {
             setTimeout(() => {
-                // Calculate bounce direction (opposite direction, bounce off-screen)
-                // Bounce much further to go off-screen
-                const bounceX = -deltaX * 2.5; // Bounce back 250% of the distance to go off-screen
-                const bounceY = -deltaY * 1.5 - 200; // Bounce up and way back to go off-screen
-                const bounceAngle = angle + 180; // Reverse direction
+                // Calculate bounce direction based on the dive zone
+                // Use explicit directions for each zone to ensure correct bounce
+                let bounceX = 0;
+                let bounceY = 0;
+                let bounceAngle = 0;
+                
+                const bounceMagnitude = 400; // Distance to bounce off-screen
+                
+                if (diveToZone === 'bottom-right') {
+                    // Bounce purely to the right
+                    bounceX = bounceMagnitude;
+                    bounceY = 0;
+                    bounceAngle = 0;
+                } else if (diveToZone === 'bottom-left') {
+                    // Bounce purely to the left
+                    bounceX = -bounceMagnitude;
+                    bounceY = 0;
+                    bounceAngle = 180;
+                } else if (diveToZone === 'top-right') {
+                    // Bounce right and up
+                    bounceX = bounceMagnitude * 0.7;
+                    bounceY = -bounceMagnitude * 0.5;
+                    bounceAngle = -35;
+                } else if (diveToZone === 'top-left') {
+                    // Bounce left and up
+                    bounceX = -bounceMagnitude * 0.7;
+                    bounceY = -bounceMagnitude * 0.5;
+                    bounceAngle = 215;
+                }
                 
                 ballContainer.style.transition = 'transform 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
                 ballContainer.style.transform = `translate(calc(-50% + ${deltaX + bounceX}px), ${deltaY + bounceY}px) rotate(${bounceAngle}deg) scale(${scaleEnd * 1.5})`;
