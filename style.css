@@ -13,22 +13,31 @@
 
 body {
     font-family: 'Cairo', Arial, sans-serif;
-    background: #5a8a3a;
+    background: radial-gradient(ellipse at center, #2A1468 0%, #0C0638 58%, #07022C 100%);
     min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 20px;
+    color: #F6F0DC;
 }
 
 .game-container {
     position: relative;
     width: 100%;
     max-width: 1200px;
-    background: #6b9a4a;
+    background: #120A42;
+    border: 2px solid #D3BD70;
     border-radius: 20px;
     padding: 20px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+}
+
+.tournament-logo {
+    display: block;
+    height: 220px;
+    width: auto;
+    margin: 0 auto 16px;
 }
 
 .field-container {
@@ -37,7 +46,7 @@ body {
     aspect-ratio: 16/9;
     border-radius: 15px;
     overflow: hidden;
-    background: #7aa146;
+    background: #0C0638;
 }
 
 .background {
@@ -118,7 +127,7 @@ body {
 
 .goal-zone:hover {
     background: rgba(255, 255, 255, 0.3);
-    border-color: #ffd700;
+    border-color: #D3BD70;
     transform: scale(1.05);
     z-index: 5;
 }
@@ -296,11 +305,11 @@ body {
 }
 
 .result-text.goal {
-    color: #4ade80;
+    color: #D3BD70;
 }
 
 .result-text.save {
-    color: #fbbf24;
+    color: #E56AD8;
 }
 
 @keyframes fadeIn {
@@ -344,7 +353,8 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(12, 6, 56, 0.72);
+    border: 2px solid #D3BD70;
     padding: 15px 30px;
     border-radius: 10px;
     backdrop-filter: blur(10px);
@@ -360,7 +370,7 @@ body {
 .score-value {
     font-size: 90px;
     font-weight: bold;
-    color: #ffd700;
+    color: #D3BD70;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
